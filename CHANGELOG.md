@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.8 — 2026-10-09 (candidate)
+## 1.0.8
 
 - P-041: "Read-only" limits task files, not continuity records (SKILL.md, grok.md, claude.md).
 - P-042: Grok Bot runtime corrected — own Linux machine via the Microsoft Graph OneDrive connector; staged edits; runtime slug.

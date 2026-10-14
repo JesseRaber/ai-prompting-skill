@@ -6,7 +6,7 @@ One skill for handing work to other AI agents and reviewing what comes back: sha
 
 ## Version
 
-`1.0.8` candidate — see `CHANGELOG.md`.
+Current version: `1.0.8`. See `CHANGELOG.md`.
 
 Report as: **Loaded AI Prompting v1.0.8**.
 

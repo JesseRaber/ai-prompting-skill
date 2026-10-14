@@ -1,6 +1,6 @@
 # Install - AI Prompting (Claude Code plugin)
 
-**Not for the Claude app skill uploader.** It rejects plugin manifests. For the Claude app, Grok, ChatGPT standalone skills and most other hosts, use `…-UNIVERSAL-skill.zip`. Microsoft Copilot has a dedicated candidate package.
+**Not for the Claude app skill uploader.** It rejects plugin manifests. For the Claude app, Grok, ChatGPT standalone skills and most other hosts, use `…-UNIVERSAL-skill.zip`. Microsoft Copilot has a dedicated package.
 
 ## From the repository
 
