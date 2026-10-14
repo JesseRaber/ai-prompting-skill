@@ -143,4 +143,3 @@ jobs:
             --title "AI Prompting v$VERSION" \
             --notes-file "$NOTES" \
             dist/*.zip dist/SHA256SUMS.txt
-          fi

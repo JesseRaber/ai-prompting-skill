@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import unittest
 from importlib.util import module_from_spec, spec_from_file_location
 
@@ -34,6 +37,21 @@ def resolve(path: str) -> Path:
 
 
 class PackageTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix" and shutil.which("bash"), "requires POSIX bash")
+    def test_workflow_run_steps_have_valid_bash_syntax(self) -> None:
+        for workflow in sorted((ROOT / ".github/workflows").glob("*.yml")):
+            data = yaml.safe_load(workflow.read_text(encoding="utf-8"))
+            for job in data["jobs"].values():
+                for step in job["steps"]:
+                    if "run" not in step:
+                        continue
+                    with self.subTest(workflow=workflow.name, step=step.get("name")):
+                        result = subprocess.run(
+                            ["bash", "-n"], input=step["run"], text=True,
+                            capture_output=True, check=False,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_frontmatter(self) -> None:
         text = SKILL.read_text(encoding="utf-8")
         fm = frontmatter(text)
