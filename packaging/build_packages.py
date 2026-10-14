@@ -36,6 +36,15 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def frontmatter(data):
+    """Return the YAML frontmatter and body from a skill Markdown file."""
+    text = data.decode('utf-8')
+    if not text.startswith('---\n'):
+        raise ValueError('SKILL.md has no YAML frontmatter')
+    header, body = text[4:].split('---\n', 1)
+    return header, body
+
+
 def source_files():
     files = {}
     for p in sorted(SKILL.rglob('*')):
@@ -109,10 +118,12 @@ def write_zip(archive, items, folder_entries):
     with zipfile.ZipFile(archive, 'x', compression=zipfile.ZIP_DEFLATED) as z:
         for d in sorted(dirs):
             info = zipfile.ZipInfo(d, date_time=STAMP)
+            info.create_system = 3
             info.external_attr = 0o40755 << 16 | 0x10
             z.writestr(info, b'')
         for n in names:
             info = zipfile.ZipInfo(n, date_time=STAMP)
+            info.create_system = 3
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             z.writestr(info, items[n])
@@ -156,11 +167,17 @@ def verify(archive, flavor, items, dirs, files):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('output')
+    parser.add_argument('output', nargs='?')
     parser.add_argument('--status', default='local candidate, not published')
+    parser.add_argument('--describe', action='store_true')
     args = parser.parse_args()
-    output = Path(args.output).resolve()
     version = re.search(r'^  version: "([^"]+)"', (SKILL / 'SKILL.md').read_text(encoding='utf-8'), re.M)[1]
+    if args.describe:
+        print(json.dumps({'version': version, 'skill': NAME}))
+        return
+    if not args.output:
+        parser.error('output directory is required unless --describe is used')
+    output = Path(args.output).resolve()
     for name in ('.codex-plugin', '.claude-plugin'):
         assert json.loads((REPO / name / 'plugin.json').read_text())['version'] == version
     files = source_files()
