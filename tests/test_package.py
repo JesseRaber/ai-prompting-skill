@@ -10,8 +10,10 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import tempfile
 import unittest
 from importlib.util import module_from_spec, spec_from_file_location
+from unittest.mock import patch
 
 import yaml
 
@@ -137,6 +139,42 @@ class PackageTests(unittest.TestCase):
         expected.update("ai-prompting/" + n for n in files if n.startswith("references/"))
         self.assertEqual(set(package), expected)
         self.assertIn(b"Loaded AI Prompting v1.0.8", package["ai-prompting/INSTALL.md"])
+
+    def test_package_verification_survives_optimized_python(self) -> None:
+        script = (
+            "import importlib.util, pathlib, sys, tempfile, zipfile; "
+            "p = pathlib.Path(sys.argv[1]); "
+            "s = importlib.util.spec_from_file_location('builder', p); "
+            "b = importlib.util.module_from_spec(s); s.loader.exec_module(b); "
+            "z = pathlib.Path(tempfile.mkdtemp()) / 'ai-prompting-verify-probe.zip'; "
+            "f = zipfile.ZipFile(z, 'w'); f.writestr('wrong.txt', b'wrong'); f.close(); "
+            "b.verify(z, 'UNIVERSAL-skill', {'ai-prompting/SKILL.md': b'correct'}, set(), {})"
+        )
+        result = subprocess.run(
+            [os.sys.executable, "-O", "-c", script, str(ROOT / "packaging/build_packages.py")],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Package check failed", result.stderr)
+
+    def test_source_files_refuses_linked_entries(self) -> None:
+        spec = spec_from_file_location("build_packages_link_test", ROOT / "packaging/build_packages.py")
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            skill = repo / "skills/ai-prompting"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("test\n", encoding="utf-8")
+            target = repo / "target.txt"
+            target.write_text("test\n", encoding="utf-8")
+            try:
+                (skill / "linked.txt").symlink_to(target)
+            except OSError as error:
+                self.skipTest("symlink creation unavailable: " + str(error))
+            with patch.object(module, "REPO", repo), patch.object(module, "SKILL", skill):
+                with self.assertRaisesRegex(ValueError, "Refusing linked package source"):
+                    module.source_files()
 
 
 if __name__ == "__main__":
