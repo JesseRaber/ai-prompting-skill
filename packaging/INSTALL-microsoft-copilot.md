@@ -1,6 +1,6 @@
 # Microsoft Copilot agent package
 
-Candidate v1.0.8. This ZIP contains `ai-prompting/SKILL.md`, all Markdown files in `ai-prompting/references/`, and this guide. It is prepared for a Microsoft Copilot agent's knowledge or file upload. An owner-reported 2026-10-14 Copilot Agent test loaded v1.0.8 from its installed skill catalog after this dedicated ZIP was selected. The remote package bytes and future-session persistence were not independently verified.
+Version 1.0.8. This ZIP contains `ai-prompting/SKILL.md`, all Markdown files in `ai-prompting/references/`, and this guide. It is prepared for a Microsoft Copilot agent's knowledge or file upload. An owner-reported 2026-10-14 Copilot Agent test loaded v1.0.8 from its installed skill catalog after this dedicated ZIP was selected. The remote package bytes and future-session persistence were not independently verified.
 
 Upload this ZIP to the intended Copilot agent or workspace if that surface accepts ZIPs. If it requires individual files, upload `SKILL.md` and the reference files while preserving their names. For an agent performing the install, supply the ZIP's absolute path and require an existence check before it replaces any installed copy. Do not claim the agent can open a local `C:\` path unless it has a tested bridge to that PC.
 
