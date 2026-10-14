@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.0.0). Builds artifacts only; does not publish.'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Install validation dependency
+        run: python -m pip install --disable-pip-version-check PyYAML
+
+      - name: Resolve version
+        id: ver
+        env:
+          # Passed through the environment, never interpolated into the script,
+          # so a crafted dispatch input cannot inject shell.
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Refusing non-semver version: $VERSION"; exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version $VERSION"
+
+      - name: Check package versions agree
+        run: |
+          python3 - "${{ steps.ver.outputs.version }}" <<'EOF'
+          import json, sys, yaml
+          tag = sys.argv[1]
+          text = open('skills/ai-prompting/SKILL.md', encoding='utf-8').read()
+          fm = yaml.safe_load(text.split('---')[1])
+          versions = {
+              'SKILL.md': str(fm.get('metadata', {}).get('version', '')),
+              '.codex-plugin/plugin.json': json.load(open('.codex-plugin/plugin.json'))['version'],
+              '.claude-plugin/plugin.json': json.load(open('.claude-plugin/plugin.json'))['version'],
+          }
+          mismatches = {name: value for name, value in versions.items() if value != tag}
+          if mismatches:
+              sys.exit(f"Version mismatch: build says {tag}, packages say {mismatches}")
+          catalog = json.load(open('.claude-plugin/marketplace.json'))
+          names = [p.get('name') for p in catalog.get('plugins', [])]
+          if 'ai-prompting' not in names:
+              sys.exit('marketplace.json does not list ai-prompting')
+          print(f"All package versions agree: {tag}")
+          EOF
+
+      - name: Run OpenAI skill validator
+        run: |
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/openai/skills/49f948faa9258a0c61caceaf225e179651397431/skills/.system/skill-creator/scripts/quick_validate.py \
+            --output /tmp/openai-quick-validate.py
+          python /tmp/openai-quick-validate.py skills/ai-prompting
+
+      - name: Run OpenAI plugin validator
+        run: |
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/openai/codex/2b7c279735d0d096cf7b34fe98938f46792f4d4f/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py \
+            --output /tmp/validate_plugin.py
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/openai/codex/2b7c279735d0d096cf7b34fe98938f46792f4d4f/codex-rs/skills/src/assets/samples/plugin-creator/scripts/identifier_validation.py \
+            --output /tmp/identifier_validation.py
+          python /tmp/validate_plugin.py .
+
+      - name: Run package tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate skill frontmatter
+        run: |
+          python3 - <<'EOF'
+          import sys, yaml
+          text = open('skills/ai-prompting/SKILL.md', encoding='utf-8').read()
+          if not text.startswith('---'):
+              sys.exit("SKILL.md has no YAML frontmatter")
+          fm = yaml.safe_load(text.split('---')[1])
+          for key in ('name', 'description'):
+              if not fm.get(key):
+                  sys.exit(f"SKILL.md frontmatter missing required key: {key}")
+          if fm['name'] != 'ai-prompting':
+              sys.exit(f"frontmatter name {fm['name']!r} does not match the skill folder")
+          if len(fm['description']) > 1024:
+              sys.exit(f"description is {len(fm['description'])} chars; limit is 1024")
+          print("Frontmatter OK")
+          EOF
+
+      - name: Build and verify packages
+        id: build
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          # Builds all six archives, byte-checks every member against source
+          # and writes SHA256SUMS.txt.
+          python3 packaging/build_packages.py dist --status "release build ${GITHUB_REF_NAME}"
+          rm -f dist/BUILD_EVIDENCE.json
+          ls -lh dist
+          cat dist/SHA256SUMS.txt
+          if find dist -name __pycache__ | grep -q .; then echo "__pycache__ leaked"; exit 1; fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: packages-${{ steps.ver.outputs.version }}
+          path: dist/
+
+      - name: Create draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+          NOTES=packaging/RELEASE_NOTES_v$VERSION.md
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release already exists; refusing to replace its assets or notes."
+            exit 1
+          fi
+          if [ ! -f "$NOTES" ]; then
+            echo "Missing reviewed release notes: $NOTES"
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag --draft \
+            --title "AI Prompting v$VERSION" \
+            --notes-file "$NOTES" \
+            dist/*.zip dist/SHA256SUMS.txt
+          fi

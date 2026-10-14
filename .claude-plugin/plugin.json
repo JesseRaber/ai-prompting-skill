@@ -1,0 +1,12 @@
+{
+  "name": "ai-prompting",
+  "version": "1.0.8",
+  "description": "Write, review and follow up on prompts for other AI agents (Opal, Manus, Copilot, Gemini, Antigravity, Grok, Meta AI, ChatGPT/Codex, Claude, local models) and import what they send back.",
+  "author": {
+    "name": "Jesse Raber"
+  },
+  "homepage": "https://github.com/JesseRaber/ai-prompting-skill",
+  "repository": "https://github.com/JesseRaber/ai-prompting-skill",
+  "license": "MIT",
+  "keywords": ["prompt-engineering", "multi-agent", "opal", "manus", "copilot", "handoff"]
+}

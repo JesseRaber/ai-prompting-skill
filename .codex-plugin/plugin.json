@@ -1,0 +1,28 @@
+{
+  "name": "ai-prompting",
+  "version": "1.0.8",
+  "description": "Write, review and follow up on prompts for other AI agents and import what they send back.",
+  "skills": "./skills/",
+  "author": {
+    "name": "Jesse Raber",
+    "url": "https://github.com/JesseRaber"
+  },
+  "homepage": "https://github.com/JesseRaber/ai-prompting-skill",
+  "repository": "https://github.com/JesseRaber/ai-prompting-skill",
+  "license": "MIT",
+  "keywords": ["prompt-engineering", "multi-agent", "opal", "manus", "handoff"],
+  "interface": {
+    "displayName": "AI Prompting",
+    "shortDescription": "Write and review prompts for other AI agents",
+    "longDescription": "One skill for handing work to other AI agents: shared prompt rules, a short-pointer pattern for agents with input limits, Opal and Manus methods, starter notes for Copilot, Gemini, Antigravity, Grok, Meta AI, ChatGPT/Codex, Claude and local models, and a procedure for importing and spot-checking replies.",
+    "developerName": "Jesse Raber",
+    "category": "Productivity",
+    "capabilities": [
+      "Agent-specific prompt writing",
+      "Manus run and recording review",
+      "Reply import and spot-checks",
+      "Multi-model review kits"
+    ],
+    "defaultPrompt": "Use $ai-prompting to write a prompt for another AI agent, or to review and import what it sent back."
+  }
+}

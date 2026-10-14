@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-prompting-skill",
+  "description": "AI Prompting skill by Jesse Raber",
+  "owner": {
+    "name": "Jesse Raber",
+    "url": "https://github.com/JesseRaber"
+  },
+  "plugins": [
+    {
+      "name": "ai-prompting",
+      "source": "./",
+      "description": "Write, review and follow up on prompts for other AI agents and import what they send back.",
+      "author": {
+        "name": "Jesse Raber"
+      },
+      "homepage": "https://github.com/JesseRaber/ai-prompting-skill",
+      "repository": "https://github.com/JesseRaber/ai-prompting-skill",
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": ["prompt-engineering", "multi-agent", "opal", "manus", "handoff"]
+    }
+  ]
+}
