@@ -6,13 +6,13 @@ One skill for handing work to other AI agents and reviewing what comes back: sha
 
 ## Version
 
-Current version: `1.0.8`. See `CHANGELOG.md`.
+Current source version: `1.0.8`. See `CHANGELOG.md`. As of 2026-10-29, this repository has no published GitHub releases; source availability is not a published package release.
 
 Report as: **Loaded AI Prompting v1.0.8**.
 
 ## Install
 
-Prebuilt packages are attached to each [release](https://github.com/JesseRaber/ai-prompting-skill/releases). **Which ZIP do I use?**
+Check [GitHub releases](https://github.com/JesseRaber/ai-prompting-skill/releases) for published packages. None are published as of 2026-10-29. Until a release is published, use the source instructions below or build a local candidate using the packaging instructions; locally built packages are not published releases. The table describes the supported package formats. **Which ZIP do I use?**
 
 | Your AI app | Download |
 |---|---|
